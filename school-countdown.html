@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>School Countdown Calendar</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css" />
+  <style>
+    /* ── Reset & base ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-primary:     #ffffff;
+      --bg-secondary:   #f5f4f0;
+      --bg-success:     #e1f5ee;
+      --text-primary:   #1a1a18;
+      --text-secondary: #6b6b67;
+      --text-success:   #085041;
+      --border-subtle:  rgba(0,0,0,0.12);
+      --border-medium:  rgba(0,0,0,0.25);
+      --border-success: #1D9E75;
+      --border-info:    #378ADD;
+      --accent-success: #1D9E75;
+      --accent-info:    #378ADD;
+      --radius-sm: 6px;
+      --radius-md: 8px;
+      --radius-lg: 12px;
+      --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg-primary:     #1e1e1c;
+        --bg-secondary:   #2a2a27;
+        --bg-success:     #04342c;
+        --text-primary:   #f0ede6;
+        --text-secondary: #8a8a85;
+        --text-success:   #9fe1cb;
+        --border-subtle:  rgba(255,255,255,0.10);
+        --border-medium:  rgba(255,255,255,0.22);
+      }
+    }
+
+    body {
+      font-family: var(--font);
+      font-size: 16px;
+      line-height: 1.6;
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      padding: 2rem 1rem;
+    }
+
+    /* ── App container ── */
+    .app { max-width: 640px; margin: 0 auto; }
+
+    /* ── Tabs ── */
+    .tab-bar {
+      display: flex; gap: 4px;
+      background: var(--bg-primary);
+      border-radius: var(--radius-md);
+      padding: 3px; margin-bottom: 1.5rem;
+      border: 0.5px solid var(--border-subtle);
+    }
+    .tab {
+      flex: 1; padding: 7px 12px; border: none;
+      background: transparent; border-radius: var(--radius-sm);
+      font-size: 14px; cursor: pointer;
+      color: var(--text-secondary); transition: all 0.15s;
+      font-family: var(--font);
+    }
+    .tab.active { background: var(--bg-secondary); color: var(--text-primary); font-weight: 500; }
+
+    /* ── Form ── */
+    .section { margin-bottom: 1.5rem; }
+    .slabel {
+      font-size: 11px; font-weight: 600; color: var(--text-secondary);
+      text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 10px;
+    }
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    .field label { font-size: 13px; color: var(--text-secondary); }
+
+    input[type="text"], input[type="date"] {
+      width: 100%; padding: 8px 10px; font-size: 14px;
+      font-family: var(--font);
+      background: var(--bg-primary); color: var(--text-primary);
+      border: 0.5px solid var(--border-medium);
+      border-radius: var(--radius-md); outline: none; transition: border-color 0.15s;
+    }
+    input[type="text"]:focus, input[type="date"]:focus {
+      border-color: var(--accent-info);
+      box-shadow: 0 0 0 2px rgba(55,138,221,0.15);
+    }
+
+    /* ── Event list ── */
+    .event-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+    .event-item { display: flex; gap: 8px; align-items: center; }
+    .event-item .edot-input { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .event-item .ename  { flex: 1.4; min-width: 0; }
+    .event-item .estart { flex: 1;   min-width: 0; }
+    .event-item .eend   { flex: 1;   min-width: 0; }
+
+    .event-type-toggle {
+      display: flex;
+      border: 0.5px solid var(--border-medium);
+      border-radius: var(--radius-md); overflow: hidden; flex-shrink: 0;
+    }
+    .event-type-toggle button {
+      border: none; background: transparent; padding: 5px 9px;
+      font-size: 12px; font-family: var(--font);
+      cursor: pointer; color: var(--text-secondary); transition: all 0.15s;
+    }
+    .event-type-toggle button.on { background: var(--bg-secondary); color: var(--text-primary); font-weight: 500; }
+
+    .remove-btn {
+      border: none; background: none; cursor: pointer;
+      color: var(--text-secondary); padding: 5px;
+      border-radius: var(--radius-sm); display: flex; align-items: center;
+      flex-shrink: 0; transition: all 0.15s;
+    }
+    .remove-btn:hover { color: #E24B4A; background: var(--bg-secondary); }
+
+    /* ── Buttons ── */
+    .add-btn {
+      background: none; border: 0.5px dashed var(--border-medium);
+      border-radius: var(--radius-md); padding: 8px 14px;
+      font-size: 13px; font-family: var(--font); color: var(--text-secondary);
+      cursor: pointer; width: 100%; display: flex; align-items: center; gap: 6px; transition: all 0.15s;
+    }
+    .add-btn:hover { background: var(--bg-primary); color: var(--text-primary); }
+
+    .gen-btn {
+      width: 100%; padding: 11px; font-size: 15px; font-weight: 500;
+      font-family: var(--font); background: var(--text-primary);
+      color: var(--bg-primary); border: none; border-radius: var(--radius-md);
+      cursor: pointer; transition: opacity 0.15s;
+    }
+    .gen-btn:hover { opacity: 0.82; }
+
+    /* ── Live clock ── */
+    .live-clock {
+      font-size: 12px; color: var(--text-secondary);
+      text-align: right; margin-bottom: 8px; font-variant-numeric: tabular-nums;
+    }
+
+    /* ── Hero card ── */
+    .hero {
+      background: var(--bg-primary); border: 0.5px solid var(--border-subtle);
+      border-radius: var(--radius-lg); padding: 1.25rem 1.5rem;
+      margin-bottom: 1.25rem; position: relative; overflow: hidden;
+    }
+    .hero.break-mode { border-color: var(--border-success); }
+    .hero-date     { font-size: 12px; color: var(--text-secondary); margin-bottom: 4px; }
+    .hero-headline { font-size: 22px; font-weight: 500; line-height: 1.3; margin-bottom: 6px; }
+    .hero-sub      { font-size: 13px; color: var(--text-secondary); }
+    .hero-sub.break-text { color: var(--text-success); }
+
+    .prog-wrap { margin-top: 16px; }
+    .prog-bar { height: 5px; background: var(--bg-secondary); border-radius: 99px; overflow: hidden; }
+    .prog-fill { height: 100%; border-radius: 99px; background: var(--text-primary); transition: width 0.5s ease; }
+    .prog-fill.break-fill { background: var(--accent-success); }
+    .prog-labels { display: flex; justify-content: space-between; margin-top: 5px; font-size: 11px; color: var(--text-secondary); }
+
+    /* ── Confetti ── */
+    .confetti-wrap { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+    .confetti-piece { position: absolute; border-radius: 2px; animation: confetti-fall linear forwards; }
+    @keyframes confetti-fall {
+      0%   { transform: translateY(-20px) rotate(0deg);   opacity: 1; }
+      100% { transform: translateY(180px) rotate(720deg); opacity: 0; }
+    }
+
+    /* ── Event cards ── */
+    .upcoming-label {
+      font-size: 11px; font-weight: 600; color: var(--text-secondary);
+      text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 10px;
+    }
+    .event-cards { display: flex; flex-direction: column; gap: 6px; }
+    .ecard {
+      display: flex; align-items: center; gap: 12px; padding: 10px 14px;
+      background: var(--bg-primary); border: 0.5px solid var(--border-subtle);
+      border-radius: var(--radius-md); transition: opacity 0.2s;
+    }
+    .ecard.is-next         { border-color: var(--border-info);    border-width: 1.5px; }
+    .ecard.is-active-break { border-color: var(--border-success); border-width: 1.5px; }
+    .ecard.is-past         { opacity: 0.48; }
+    .edot       { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .ecard-name { font-size: 14px; flex: 1; }
+    .ecard-date { font-size: 12px; color: var(--text-secondary); }
+    .ecard-days { font-size: 14px; font-weight: 500; min-width: 70px; text-align: right; }
+    .badge { font-size: 11px; padding: 2px 8px; border-radius: 99px; flex-shrink: 0; }
+    .badge-next { background: #E6F1FB; color: #0C447C; }
+    .badge-now  { background: #E1F5EE; color: #085041; }
+    .badge-past { background: var(--bg-secondary); color: var(--text-secondary); }
+
+    @media (prefers-color-scheme: dark) {
+      .badge-next { background: #0C447C; color: #B5D4F4; }
+      .badge-now  { background: #085041; color: #9FE1CB; }
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 480px) {
+      body { padding: 1rem 0.75rem; }
+      .field-row { grid-template-columns: 1fr; }
+      .hero-headline { font-size: 18px; }
+      .event-item { flex-wrap: wrap; }
+      .event-item .eend { flex: 1 1 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+
+    <div class="tab-bar">
+      <button class="tab active" id="t-setup" onclick="showTab('setup')">Setup</button>
+      <button class="tab" id="t-cd" onclick="showTab('cd')">Countdown</button>
+    </div>
+
+    <!-- Setup panel -->
+    <div id="setup-panel">
+      <div class="section">
+        <div class="slabel">School year</div>
+        <div class="field-row">
+          <div class="field">
+            <label for="sch-start">First day of school</label>
+            <input type="date" id="sch-start" />
+          </div>
+          <div class="field">
+            <label for="sch-end">Last day of school</label>
+            <input type="date" id="sch-end" />
+          </div>
+        </div>
+        <div class="field">
+          <label for="sch-name">School name (optional)</label>
+          <input type="text" id="sch-name" placeholder="e.g. Lincoln High School" />
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="slabel">Events &amp; breaks</div>
+        <div class="event-list" id="evt-list"></div>
+        <button class="add-btn" onclick="addEvt()">
+          <i class="ti ti-plus" aria-hidden="true"></i> Add event or break
+        </button>
+      </div>
+
+      <button class="gen-btn" onclick="generate()">View countdown →</button>
+    </div>
+
+    <!-- Countdown panel -->
+    <div id="cd-panel" style="display:none">
+      <div class="live-clock" id="live-clock" aria-live="polite"></div>
+      <div id="hero-area"></div>
+      <div class="upcoming-label">All events</div>
+      <div class="event-cards" id="all-events"></div>
+    </div>
+
+  </div>
+
+  <script>
+    // ── Constants ──────────────────────────────────────────────────────────────
+    const COLORS = ['#7F77DD','#1D9E75','#D85A30','#378ADD','#BA7517','#D4537E','#639922'];
+    const CONFETTI_COLORS = [...COLORS, '#EF9F27'];
+
+    // ── State ──────────────────────────────────────────────────────────────────
+    let events        = [];
+    let colorIndex    = 0;
+    let tickTimer     = null;
+    let midnightTimer = null;
+    let appData       = { start: null, end: null, name: '', events: [] };
+
+    // ── Date helpers ───────────────────────────────────────────────────────────
+    function today() { const d = new Date(); d.setHours(0,0,0,0); return d; }
+
+    function parseDate(str) {
+      if (!str) return null;
+      const d = new Date(str + 'T00:00:00');
+      return isNaN(d) ? null : d;
+    }
+
+    function daysBetween(a, b) { return Math.round((b - a) / 86_400_000); }
+
+    function fmtDate(d)  { return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); }
+    function fmtShort(d) { return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); }
+    function plural(n, word) { return `${n} ${word}${n === 1 ? '' : 's'}`; }
+
+    function escHtml(str) {
+      return str.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    // ── Event list management ──────────────────────────────────────────────────
+    function addEvt(name = '', start = '', end = '', isBreak = false) {
+      const color = COLORS[colorIndex % COLORS.length];
+      colorIndex++;
+      events.push({ id: Date.now() + Math.random(), name, start, end, isBreak, color });
+      renderEvtList();
+    }
+
+    function removeEvt(id) { events = events.filter(e => e.id !== id); renderEvtList(); }
+
+    function setEvtField(id, field, value) {
+      const ev = events.find(e => e.id === id);
+      if (ev) ev[field] = value;
+    }
+
+    function toggleBreak(id) {
+      const ev = events.find(e => e.id === id);
+      if (ev) { ev.isBreak = !ev.isBreak; renderEvtList(); }
+    }
+
+    function renderEvtList() {
+      const list = document.getElementById('evt-list');
+      list.innerHTML = '';
+      events.forEach(ev => {
+        const row = document.createElement('div');
+        row.className = 'event-item';
+        row.innerHTML = `
+          <span class="edot-input" style="background:${ev.color}"></span>
+          <input class="ename" type="text" placeholder="Name (e.g. Winter break)"
+            value="${escHtml(ev.name)}" oninput="setEvtField(${ev.id},'name',this.value)" />
+          <input class="estart" type="date" value="${ev.start}"
+            title="${ev.isBreak ? 'Break start date' : 'Event date'}"
+            oninput="setEvtField(${ev.id},'start',this.value)" />
+          ${ev.isBreak
+            ? `<input class="eend" type="date" value="${ev.end}" title="Break end date"
+                oninput="setEvtField(${ev.id},'end',this.value)" />`
+            : `<div style="flex:1"></div>`}
+          <div class="event-type-toggle" role="group" aria-label="Event type">
+            <button class="${ev.isBreak ? '' : 'on'}" title="Single day"
+              onclick="if(events.find(e=>e.id===${ev.id}).isBreak) toggleBreak(${ev.id})">Day</button>
+            <button class="${ev.isBreak ? 'on' : ''}" title="Multi-day break"
+              onclick="if(!events.find(e=>e.id===${ev.id}).isBreak) toggleBreak(${ev.id})">Break</button>
+          </div>
+          <button class="remove-btn" onclick="removeEvt(${ev.id})" aria-label="Remove event">
+            <i class="ti ti-x" style="font-size:14px" aria-hidden="true"></i>
+          </button>`;
+        list.appendChild(row);
+      });
+    }
+
+    // ── Tab switching ──────────────────────────────────────────────────────────
+    function showTab(tab) {
+      document.getElementById('t-setup').classList.toggle('active', tab === 'setup');
+      document.getElementById('t-cd').classList.toggle('active', tab === 'cd');
+      document.getElementById('setup-panel').style.display = tab === 'setup' ? '' : 'none';
+      document.getElementById('cd-panel').style.display    = tab === 'cd'    ? '' : 'none';
+    }
+
+    // ── Generate ───────────────────────────────────────────────────────────────
+    function generate() {
+      const startVal = document.getElementById('sch-start').value;
+      const endVal   = document.getElementById('sch-end').value;
+      if (!startVal || !endVal) { alert('Please set your school start and end dates.'); return; }
+      appData = {
+        start:  parseDate(startVal),
+        end:    parseDate(endVal),
+        name:   document.getElementById('sch-name').value.trim() || 'School year',
+        events: events.map(e => ({ ...e })),
+      };
+      showTab('cd');
+      startLiveClock();
+      render();
+      scheduleMidnightRefresh();
+    }
+
+    // ── Live clock ─────────────────────────────────────────────────────────────
+    function startLiveClock() {
+      if (tickTimer) clearInterval(tickTimer);
+      const el = document.getElementById('live-clock');
+      function tick() {
+        el.textContent = new Date().toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit', second:'2-digit' });
+      }
+      tick();
+      tickTimer = setInterval(tick, 1000);
+    }
+
+    // ── Midnight auto-refresh ──────────────────────────────────────────────────
+    function scheduleMidnightRefresh() {
+      if (midnightTimer) clearTimeout(midnightTimer);
+      const now = new Date();
+      const tomorrow = new Date(now);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      tomorrow.setHours(0, 0, 0, 50);
+      midnightTimer = setTimeout(() => { render(); scheduleMidnightRefresh(); }, tomorrow - now);
+    }
+
+    // ── Timeline builder ───────────────────────────────────────────────────────
+    function buildTimeline() {
+      const { start, end, events: evts } = appData;
+      const items = [
+        { name: 'First day of school', date: start, endDate: start, color: '#1D9E75', isBreak: false, isSchool: true },
+        { name: 'Last day of school',  date: end,   endDate: end,   color: '#7F77DD', isBreak: false, isSchool: true },
+      ];
+      evts.forEach(ev => {
+        if (!ev.name || !ev.start) return;
+        const date = parseDate(ev.start);
+        if (!date) return;
+        const endDate = (ev.isBreak && ev.end) ? parseDate(ev.end) : date;
+        items.push({ name: ev.name, date, endDate: endDate || date, color: ev.color, isBreak: ev.isBreak });
+      });
+      return items.sort((a, b) => a.date - b.date);
+    }
+
+    // ── Main render ────────────────────────────────────────────────────────────
+    function render() {
+      const td    = today();
+      const { start, end, name } = appData;
+      const items = buildTimeline();
+
+      const totalDays = daysBetween(start, end);
+      const elapsed   = Math.max(0, daysBetween(start, td));
+      const yearPct   = Math.min(100, Math.max(0, Math.round((elapsed / totalDays) * 100)));
+
+      const activeBreak = items.find(item => item.isBreak && td >= item.date && td <= item.endDate) ?? null;
+      const nextItem    = !activeBreak ? (items.find(item => item.date > td) ?? null) : null;
+
+      let headline = '', sub = '', heroBreak = false;
+      let progPct = yearPct, progFill = '';
+      let progStart = fmtDate(start), progEnd = fmtDate(end);
+      let progLabel = `${yearPct}% of year done`;
+      let showConfetti = false;
+
+      if (td < start) {
+        headline = `${plural(daysBetween(td, start), 'day')} until school starts`;
+        sub = `${name} begins ${fmtDate(start)}`;
+
+      } else if (td > end) {
+        headline = 'School year is over!';
+        sub = `${name} ended ${fmtDate(end)}`;
+
+      } else if (activeBreak) {
+        const daysLeft       = daysBetween(td, activeBreak.endDate);
+        const totalBreakDays = Math.max(1, daysBetween(activeBreak.date, activeBreak.endDate));
+        const breakElapsed   = daysBetween(activeBreak.date, td);
+        const breakPct       = Math.min(100, Math.max(0, Math.round((breakElapsed / totalBreakDays) * 100)));
+
+        if (td.getTime() === activeBreak.date.getTime()) {
+          headline = `${activeBreak.name} starts today!`;
+          showConfetti = true;
+        } else if (daysLeft === 0) {
+          headline = `Last day of ${activeBreak.name}`;
+        } else {
+          headline = `${plural(daysLeft, 'day')} left of ${activeBreak.name}`;
+        }
+
+        sub       = `Break ends ${fmtDate(activeBreak.endDate)} · enjoy it!`;
+        heroBreak = true; progFill = 'break-fill'; progPct = breakPct;
+        progStart = fmtDate(activeBreak.date); progEnd = fmtDate(activeBreak.endDate);
+        progLabel = `${100 - breakPct}% remaining`;
+
+      } else if (nextItem) {
+        const d  = daysBetween(td, nextItem.date);
+        headline = d === 0 ? `Today: ${nextItem.name}` : `${plural(d, 'day')} until ${nextItem.name}`;
+        sub      = `${plural(daysBetween(td, end), 'day')} left in the school year`;
+
+      } else {
+        headline = `${plural(daysBetween(td, end), 'day')} until school ends`;
+        sub      = fmtDate(td);
+      }
+
+      document.getElementById('hero-area').innerHTML = `
+        <div class="hero ${heroBreak ? 'break-mode' : ''}">
+          ${showConfetti ? '<div class="confetti-wrap" id="confetti-wrap"></div>' : ''}
+          <div class="hero-date">${fmtDate(td)}</div>
+          <div class="hero-headline">${escHtml(headline)}</div>
+          <div class="hero-sub ${heroBreak ? 'break-text' : ''}">${escHtml(sub)}</div>
+          <div class="prog-wrap">
+            <div class="prog-bar"><div class="prog-fill ${progFill}" style="width:${progPct}%"></div></div>
+            <div class="prog-labels"><span>${progStart}</span><span>${progLabel}</span><span>${progEnd}</span></div>
+          </div>
+        </div>`;
+
+      if (showConfetti) launchConfetti();
+
+      const evtEl = document.getElementById('all-events');
+      evtEl.innerHTML = '';
+
+      items.forEach(item => {
+        const isPast        = td > item.endDate;
+        const isActiveBreak = item.isBreak && td >= item.date && td <= item.endDate;
+        const isNext        = !activeBreak && nextItem && item === nextItem;
+        const daysAway      = daysBetween(td, item.date);
+
+        let daysTxt = '';
+        if (isActiveBreak) {
+          const left = daysBetween(td, item.endDate);
+          daysTxt = left === 0 ? 'ends today' : `${left}d left`;
+        } else if (!isPast) {
+          daysTxt = daysAway === 0 ? 'today!' : `${daysAway}d away`;
+        }
+
+        let badgeHtml = '';
+        if (isActiveBreak)    badgeHtml = '<span class="badge badge-now">on break</span>';
+        else if (isNext)      badgeHtml = '<span class="badge badge-next">up next</span>';
+        else if (isPast)      badgeHtml = '<span class="badge badge-past">past</span>';
+
+        const dateStr = (item.isBreak && item.endDate && item.endDate.getTime() !== item.date.getTime())
+          ? `${fmtShort(item.date)} – ${fmtShort(item.endDate)}`
+          : fmtShort(item.date);
+
+        const card = document.createElement('div');
+        card.className = ['ecard',
+          isActiveBreak ? 'is-active-break' : '',
+          isNext ? 'is-next' : '',
+          isPast && !isActiveBreak ? 'is-past' : '',
+        ].filter(Boolean).join(' ');
+
+        card.innerHTML = `
+          <span class="edot" style="background:${item.color}"></span>
+          <span class="ecard-name">${escHtml(item.name)}</span>
+          <span class="ecard-date">${dateStr}</span>
+          ${badgeHtml}
+          ${daysTxt ? `<span class="ecard-days">${daysTxt}</span>` : ''}`;
+        evtEl.appendChild(card);
+      });
+    }
+
+    // ── Confetti ───────────────────────────────────────────────────────────────
+    function launchConfetti() {
+      const wrap = document.getElementById('confetti-wrap');
+      if (!wrap) return;
+      for (let i = 0; i < 42; i++) {
+        const p = document.createElement('div');
+        p.className = 'confetti-piece';
+        p.style.cssText = `
+          left:${Math.random()*100}%;top:${-(10+Math.random()*20)}px;
+          width:${5+Math.random()*7}px;height:${5+Math.random()*7}px;
+          border-radius:${Math.random()>.5?'50%':'2px'};
+          background:${CONFETTI_COLORS[Math.floor(Math.random()*CONFETTI_COLORS.length)]};
+          animation-duration:${(1.2+Math.random()*1.2).toFixed(2)}s;
+          animation-delay:${(Math.random()*.7).toFixed(2)}s;`;
+        wrap.appendChild(p);
+      }
+    }
+
+    // ── Bootstrap ──────────────────────────────────────────────────────────────
+    addEvt('Winter break', '', '', true);
+    addEvt('Spring break', '', '', true);
+    addEvt('AP exams',     '', '', false);
+  </script>
+</body>
+</html>
